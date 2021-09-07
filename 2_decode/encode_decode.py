@@ -8,9 +8,11 @@ import xml
 import brotli
 import zlib
 import urllib.parse
+import binascii
 from Crypto.Hash import MD5, SHA256
 from base64 import b64encode, b64decode
-import binascii
+from math import ceil as ceil
+
 import time
 
 
@@ -204,3 +206,19 @@ def yaml2json(item, Loader=yaml.SafeLoader):
     """
     formatted_item = hash_format(item)
     return json.dumps(yaml.load(formatted_item, Loader=Loader))
+
+
+def stringxor(item, key):
+    """
+    String XOR with key.
+    """
+    pos = 0
+    payload = list()
+    key_stream = list()
+    key_string = key * ceil(len(item) / len(key))
+    while pos < len(item):
+        payload.append(item[pos])
+        key_stream.append(key_string[pos])
+        pos += 1
+    xor = [chr(ord(p) ^ ord(k)) for p, k in zip(payload, key_stream)]
+    return ''.join(xor)
