@@ -210,7 +210,10 @@ def yaml2json(item, Loader=yaml.SafeLoader):
 
 def stringxor(item, key):
     """
-    String XOR with key.
+    String XOR with key, if the key is shorter it will be repeated multiple
+    times to match the length of the payload.
+    'ABC','A' -> '\x00\x03\x02'
+    '\x00\x03\x02','A' -> 'ABC'
     """
     pos = 0
     payload = list()
