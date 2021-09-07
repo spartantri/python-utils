@@ -6,6 +6,11 @@ import ipaddress
 
 
 def subnet(network, max_hosts=256, min_hosts=128):
+    """
+    Subnet an ip address network given a provided number of minimum and
+    maximum hosts. Defaults to maximum of 256 hosts and a minimum of 128 hosts.
+    '10.0.0.0/23' -> ['10.0.0.0/24', '10.0.1.0/24']
+    """
     if min_hosts >= max_hosts:
         return "Minimum hosts should be greater than maximum hosts"
     ip_network = ipaddress.ip_network(network, strict=False)
