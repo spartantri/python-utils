@@ -29,3 +29,37 @@ def subnet(network, max_hosts=256, min_hosts=128):
             return [str(i) for i in ip_network.subnets(new_prefix=new_prefix)]
     return None
 
+
+def num_hosts(network):
+    """
+    Number of hosts included in network.
+    '10.0.0.0/24' -> 256
+    """
+    ip_network = ipaddress.ip_network(network, strict=False)
+    return ip_network.num_addresses
+
+
+def is_ipaddress(address):
+    """
+    Check if target is a valid ip address.
+    '10.0.0.0' -> True
+    """
+    try:
+        ipaddress.ip_address(address)
+        return True
+    except ValueError:
+        return False
+
+
+def is_ipnetwork(network):
+    """
+    Check if target is a valid ip network.
+    '10.0.0.0/24' -> True
+    """
+    try:
+        if num_hosts(ipaddress.ip_network(network)) > 0:
+            return True
+        else:
+            return False
+    except ValueError:
+        return False

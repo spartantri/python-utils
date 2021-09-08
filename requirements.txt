@@ -6,3 +6,4 @@ zlib
 urllib
 pyyaml
 ipaddress
+python3-hvac

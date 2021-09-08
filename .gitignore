@@ -136,3 +136,11 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Containers
+**/consul-vault/volumes/vault/data
+**/consul-vault/volumes/consul/data*
+0_install/containers/Vault-Consul-Docker/vault/data/
+0_install/containers/Vault-Consul-Docker/vault/logs/
+Vault-Consul-Docker/vault/data/
+Vault-Consul-Docker/vault/logs/
