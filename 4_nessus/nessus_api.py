@@ -74,7 +74,7 @@ def split_targets(target_members, max_members):
     target_count = 0
     for target in targets:
         if subnet_calculator.is_ipaddress(target):
-            target_list.append([target)
+            target_list.append([target])
             target_count += 1
         elif subnet_calculator.is_ipnetwork(target):
             target_list += subnet_calculator.subnet(
