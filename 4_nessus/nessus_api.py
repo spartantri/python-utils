@@ -11,17 +11,19 @@ from datetime import datetime, timezone, timedelta
 from random import randint
 
 try:
-    cwd=getcwd()
+    cwd = getcwd()
     sys.path.append(cwd + '/3_subnetting')
     import subnet_calculator
-except:
-    pass
+except ModuleNotFoundError:
+    print("subnet_calculator module not found in path.")
+else:
+    print("Unexpected error:", sys.exc_info()[0])
+    raise
 
 VAULT_URL = environ['VAULT_URL']
 VAULT_TOKEN = environ['VAULT_TOKEN']
 TENABLE_URL = "https://cloud.tenable.com/"
 
-client = hvac.Client()
 client = hvac.Client(
     url=environ['VAULT_URL'],
     token=environ['VAULT_TOKEN']
@@ -40,20 +42,22 @@ def list_users():
     List users in Tenable.io platform.
     """
     url = TENABLE_URL + "users"
-    headers = { "Accept": "application/json" }
+    headers = {"Accept": "application/json"}
     auth = client.read('secret/tenable')['data']['data']
     response = requests.request("GET", url, headers={**headers, **auth})
     return response.json()
+
 
 def get_users_details(user_id):
     """
     Get user details from the Tenable.io platform.
     """
     url = TENABLE_URL + "users/" + user_id
-    headers = { "Accept": "application/json" }
+    headers = {"Accept": "application/json"}
     auth = client.read('secret/tenable')['data']['data']
     response = requests.request("GET", url, headers={**headers, **auth})
     return response.json()
+
 
 def list_target_groups():
     """
@@ -159,12 +163,12 @@ def locate_folder(folders, target):
     Search for a target folder in the folders list and return the name and id.
     """
     if type(folders) == list:
-        folder = [f for f in folders if f['name']==target]
+        folder = [f for f in folders if f['name'] == target]
     elif type(folders) == dict and folders.get('folders', False):
-        folder = [f for f in folders['folders'] if f['name']==target]
+        folder = [f for f in folders['folders'] if f['name'] == target]
     else:
         return False
-    if len(folder)>0:
+    if len(folder) > 0:
         return folder
     else:
         return False
@@ -192,8 +196,8 @@ def create_folder(target):
 
     payload = {"name": target}
     requests.request("POST", url, headers={**headers, **auth},
-                    json=payload)
-    response = [f for f in list_folders()['folders'] if f['name']==target]
+                     json=payload)
+    response = [f for f in list_folders()['folders'] if f['name'] == target]
     return response[0]
 
 
@@ -232,15 +236,26 @@ def get_template_uuid(template_name='basic', template_type='scan'):
 
     response = requests.request("GET", url, headers={**headers, **auth})
     template_uuid = [t['uuid'] for t in response.json()['templates']
-            if t['name']==template_name][0]
+                     if t['name'] == template_name][0]
     return template_uuid
 
 
 def create_basic_external_scan_per_group(target_scanner='US Cloud Scanner',
-                                         enable=True, launch='WEEKLY'):
+                                         enable=True, launch='WEEKLY', scan_type='External'):
     """
     Create basic network scan per target group in the Tenable.io platform.
     """
+    if launch not in ['ON_DEMAND', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']:
+        launch = 'WEEKLY'
+    if enable not in [True, False]:
+        enable = True
+    if scan_type == 'External':
+        scan_prefix = 'public'
+    elif scan_type == 'Internal':
+        scan_prefix = 'private'
+    else:
+        print("Invalid scan type : %s" % (scan_type))
+        return None
     url = TENABLE_URL + "scans"
     headers = {"Accept": "application/json"}
     auth = client.read('secret/tenable')['data']['data']
@@ -250,20 +265,16 @@ def create_basic_external_scan_per_group(target_scanner='US Cloud Scanner',
     folder = locate_or_create_folder(list_scans(), 'Internet')[0]['id']
     tz = "UTC"
     rrules = "FREQ=" + launch + ";INTERVAL=1"
-    if launch not in ['ON_DEMAND', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']:
-        launch = 'WEEKLY'
-    if enable not in [True, False]:
-        enable = True
 
-    target_groups = [(n['id'], n['name']) for n in
+    target_groups = [(g['id'], g['name']) for g in
                      list_target_groups()['target_groups'] if
-                     'public' in n['name']]
+                     scan_prefix in g['name']]
     scans = list_scans()['scans']
-    scanner_id = [i['uuid'] for i in list_scanners()['scanners']
-                if i['name'] == target_scanner][0]
+    scanner_id = [s['uuid'] for s in list_scanners()['scanners']
+                  if s['name'] == target_scanner][0]
 
     for group_id, group_name in target_groups:
-        scan_prefix = "Basic External - "
+        scan_prefix = "Basic " + scan_type + "External - "
         scan_name = scan_prefix + group_name
         if scan_name in [s['name'] for s in scans]:
             print("Skipping already existing scan %s" % (scan_name))
@@ -280,7 +291,7 @@ def create_basic_external_scan_per_group(target_scanner='US Cloud Scanner',
                     ],
                     "target_groups": [group_id],
                     "name": scan_name,
-                    "description": "Basic External scan for " + group_name,
+                    "description": "Basic " + scan_type + " scan for " + group_name,
                     "timezone": tz,
                     "rrules": rrules,
                     "folder_id": folder,
