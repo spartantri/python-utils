@@ -307,3 +307,67 @@ def create_basic_external_scan_per_group(target_scanner='US Cloud Scanner',
                                         json=payload)
             print(response.json())
     print(start_times)
+
+
+def export_scan(scan_id, export_format="db", password="", password_len=20):
+    """
+    Export scan from the Tenable.io platform.
+    """
+    url = TENABLE_URL + "scans/" + scan_id + "/export"
+    headers = {"Accept": "application/json",
+               "Content-Type": "application/json"}
+    auth = client.read('secret/tenable')['data']['data']
+
+    payload = {
+        "format": export_format
+    }
+
+    if export_format not in ["nessus","csv","db","html","pdf"]:
+        export_format = "CSV"
+    if export_format not in ["html","pdf"]:
+        chapters = "vuln_hosts_summary; vuln_by_host; compliance_exec; remediations; vuln_by_plugin; compliance"
+        headers = {**headers, **{"chapters": chapters}}
+    if password == "" and export_format == "db":
+        try:
+            password = client.read('secret/tenable/exports/' + scan_id)['data']['data']['password']
+        except TypeError:
+            password = client.write('sys/tools/random/' + str(password_len))['data']['random_bytes'][:password_len]
+        except:
+            import string, random
+            password = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase +
+                             string.digits, k = password_len))
+
+    if len(password) > 0:
+        client.write('secret/tenable/exports/' + scan_id, data={"password": password})
+        payload = {**payload, **{"password": password}}
+    print(url, payload)
+    response = requests.request("POST", url, headers={**headers, **auth},
+                                json=payload)
+    return response.json()
+
+
+def check_export_status(scan_id, file_id):
+    """
+    Check export scan status from the Tenable.io platform.
+    """
+    url = TENABLE_URL + "scans/" + scan_id + "/export/" + file_id + "/status"
+    headers = {"Accept": "application/json"}
+    auth = client.read('secret/tenable')['data']['data']
+
+    response = requests.request("GET", url, headers={**headers, **auth})
+    return response.json()
+
+
+def download_exported_scan(scan_id, file_id):
+    """
+    Download exported from the Tenable.io platform.
+    """
+    url = TENABLE_URL + "scans/" + scan_id + "/export/" + file_id + "/download"
+    headers = {"Accept": "application/json"}
+    auth = client.read('secret/tenable')['data']['data']
+
+    response = requests.request("GET", url, headers={**headers, **auth})
+
+    with open(scan_id + file_id, 'wb') as f:
+        f.write(response.text)
+    return
