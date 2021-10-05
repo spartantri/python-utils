@@ -9,7 +9,7 @@ import brotli
 import zlib
 import urllib.parse
 import binascii
-from Crypto.Hash import MD5, SHA256
+from Crypto.Hash import MD5, SHA256, SHA1, SHA512
 from base64 import b64encode, b64decode
 from math import ceil as ceil
 
@@ -79,6 +79,19 @@ def string2md5(item):
                str(type(item).__name__)
 
 
+def string2sha1(item):
+    """
+    Computes the SHA1 hash from the input.
+    """
+    hash_obj = SHA1.new()
+    formatted_item = hash_format(item)
+    if formatted_item:
+        hash_obj.update(formatted_item)
+        return hash_obj.hexdigest()
+    else:
+        return "Wrong data type expected string or byte, received %s" %\
+               str(type(item).__name__)
+
 def string2sha256(item):
     """
     Computes the SHA256 hash from the input.
@@ -92,6 +105,19 @@ def string2sha256(item):
         return "Wrong data type expected string or byte, received %s" %\
                str(type(item).__name__)
 
+
+def string2sha512(item):
+    """
+    Computes the SHA512 hash from the input.
+    """
+    hash_obj = SHA512.new()
+    formatted_item = hash_format(item)
+    if formatted_item:
+        hash_obj.update(formatted_item)
+        return hash_obj.hexdigest()
+    else:
+        return "Wrong data type expected string or byte, received %s" %\
+               str(type(item).__name__)
 
 def string2b64(item):
     """

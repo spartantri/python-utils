@@ -28,7 +28,7 @@ client = hvac.Client(
     url=environ['VAULT_URL'],
     token=environ['VAULT_TOKEN']
 )
-
+auth = client.read('secret/tenable')['data']['data']
 
 def read_secret(secret_path):
     """
@@ -43,7 +43,7 @@ def list_users():
     """
     url = TENABLE_URL + "users"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
     response = requests.request("GET", url, headers={**headers, **auth})
     return response.json()
 
@@ -54,7 +54,7 @@ def get_users_details(user_id):
     """
     url = TENABLE_URL + "users/" + user_id
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
     response = requests.request("GET", url, headers={**headers, **auth})
     return response.json()
 
@@ -65,7 +65,7 @@ def list_target_groups():
     """
     url = TENABLE_URL + "target-groups"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
     response = requests.request("GET", url, headers={**headers, **auth})
     return response.json()
 
@@ -101,7 +101,7 @@ def list_target_groups():
     """
     url = TENABLE_URL + "target-groups"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
 
     response = requests.request("GET", url, headers={**headers, **auth})
     return response.json()
@@ -115,7 +115,7 @@ def create_target_groups(target_name, target_members):
     """
     url = TENABLE_URL + "target-groups"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
 
     payload = {
         "acls": [
@@ -152,7 +152,7 @@ def list_scans():
     """
     url = TENABLE_URL + "scans"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
 
     response = requests.request("GET", url, headers={**headers, **auth})
     return response.json()
@@ -180,7 +180,7 @@ def list_folders():
     """
     url = TENABLE_URL + "folders"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
 
     response = requests.request("GET", url, headers={**headers, **auth})
     return response.json()
@@ -192,7 +192,7 @@ def create_folder(target):
     """
     url = TENABLE_URL + "folders"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
 
     payload = {"name": target}
     requests.request("POST", url, headers={**headers, **auth},
@@ -220,7 +220,7 @@ def list_scanners():
     """
     url = TENABLE_URL + "scanners"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
 
     response = requests.request("GET", url, headers={**headers, **auth})
     return response.json()
@@ -232,7 +232,7 @@ def get_template_uuid(template_name='basic', template_type='scan'):
     """
     url = "https://cloud.tenable.com/editor/" + template_type + "/templates"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
 
     response = requests.request("GET", url, headers={**headers, **auth})
     template_uuid = [t['uuid'] for t in response.json()['templates']
@@ -258,7 +258,7 @@ def create_basic_external_scan_per_group(target_scanner='US Cloud Scanner',
         return None
     url = TENABLE_URL + "scans"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
     template_uuid = get_template_uuid()
     start_times = dict()
 
@@ -316,7 +316,7 @@ def export_scan(scan_id, export_format="db", password="", password_len=20):
     url = TENABLE_URL + "scans/" + scan_id + "/export"
     headers = {"Accept": "application/json",
                "Content-Type": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
 
     payload = {
         "format": export_format
@@ -352,7 +352,7 @@ def check_export_status(scan_id, file_id):
     """
     url = TENABLE_URL + "scans/" + scan_id + "/export/" + file_id + "/status"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
 
     response = requests.request("GET", url, headers={**headers, **auth})
     return response.json()
@@ -364,10 +364,82 @@ def download_exported_scan(scan_id, file_id):
     """
     url = TENABLE_URL + "scans/" + scan_id + "/export/" + file_id + "/download"
     headers = {"Accept": "application/json"}
-    auth = client.read('secret/tenable')['data']['data']
+    # auth = client.read('secret/tenable')['data']['data']
 
     response = requests.request("GET", url, headers={**headers, **auth})
 
     with open(scan_id + file_id, 'wb') as f:
         f.write(response.text)
     return
+
+for t in tgs:
+    create_target_groups(t[0]+'_'+t[1],t[1])
+
+
+def create_internal_scan_per_group(target_scanner, enable=False,
+                                 launch='WEEKLY', scan_type='Internal'):
+    """
+    Create basic network scan per target group in the Tenable.io platform.
+    """
+    if launch not in ['ON_DEMAND', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']:
+        launch = 'WEEKLY'
+    if enable not in [True, False]:
+        enable = True
+    if scan_type == 'External':
+        scan_prefix = 'public'
+    elif scan_type == 'Internal':
+        scan_prefix = 'private'
+    else:
+        print("Invalid scan type : %s" % (scan_type))
+        return None
+    url = TENABLE_URL + "scans"
+    headers = {"Accept": "application/json"}
+    # auth = client.read('secret/tenable')['data']['data']
+    template_uuid = get_template_uuid()
+    start_times = dict()
+
+    folder = locate_or_create_folder(list_scans(), 'Intranet')[0]['id']
+    tz = "UTC"
+    rrules = "FREQ=" + launch + ";INTERVAL=1"
+
+    target_groups = [(g['id'], g['name']) for g in
+                     list_target_groups()['target_groups'] if
+                     'Default' not in g['name'] and 'public' not in g['name'].lower()]
+    scans = list_scans()['scans']
+    scanner_id = [s['uuid'] for s in list_scanners()['scanners']
+                  if s['name'] == target_scanner][0]
+
+    for group_id, group_name in target_groups:
+        scan_prefix = "Basic " + scan_type + " - "
+        scan_name = scan_prefix + group_name
+        if scan_name in [s['name'] for s in scans]:
+            print("Skipping already existing scan %s" % (scan_name))
+        else:
+            start_times[group_name] = randint(1, len(target_groups))
+            starttime = datetime.now().astimezone(timezone.utc) + timedelta(hours=start_times[group_name])
+            payload = {
+                "settings": {
+                    "acls": [
+                        {
+                            "type": "default",
+                            "permissions": 32
+                        }
+                    ],
+                    "target_groups": [group_id],
+                    "name": scan_name,
+                    "description": "Basic " + scan_type + " scan for " + group_name,
+                    "timezone": tz,
+                    "rrules": rrules,
+                    "folder_id": folder,
+                    "scanner_id": scanner_id,
+                    "starttime": starttime.strftime("%Y%m%dT%H%M%S"),
+                    "enabled": enable,
+                    "launch": launch
+                },
+                "uuid": template_uuid
+            }
+            response = requests.request("POST", url,
+                                        headers={**headers, **auth},
+                                        json=payload)
+            print(response.json())
+    print(start_times)
