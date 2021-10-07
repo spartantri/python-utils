@@ -4,7 +4,7 @@ Encode or Decode between formats.
 """
 import json
 import yaml
-import xml
+# import xml
 import brotli
 import zlib
 import urllib.parse
