@@ -251,3 +251,18 @@ def stringxor(item, key):
         pos += 1
     xor = [chr(ord(p) ^ ord(k)) for p, k in zip(payload, key_stream)]
     return ''.join(xor)
+
+def human_readable_time(seconds):
+    """
+    Convert duration in seconds to a human readable format.
+    86400 -> '1 day'
+    123456789 -> '204 weeks, 21 hours, 33 mins, 9 secs'
+    """
+    if seconds == 0:
+        return 'inf'
+    parts = []
+    for unit, div in TIME_DURATION_UNITS:
+        amount, seconds = divmod(int(seconds), div)
+        if amount > 0:
+            parts.append('{} {}{}'.format(amount, unit, "" if amount == 1 else "s"))
+    return ', '.join(parts)
